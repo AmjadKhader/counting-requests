@@ -9,7 +9,7 @@ import (
 )
 
 type Counter struct {
-	mu         sync.Mutex
+	mutex      sync.Mutex
 	interval   time.Duration
 	timestamps []time.Time
 	store      storage.Storage
@@ -22,41 +22,41 @@ func NewCounter(interval time.Duration, store storage.Storage) *Counter {
 	}
 }
 
-func (c *Counter) Increment() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (counter *Counter) Increment() {
+	counter.mutex.Lock()
+	defer counter.mutex.Unlock()
 	now := time.Now()
-	c.timestamps = append(c.timestamps, now)
-	c.cleanup(now)
-	c.store.Save(c.timestamps)
+	counter.timestamps = append(counter.timestamps, now)
+	counter.cleanup(now)
+	counter.store.Save(counter.timestamps)
 }
 
-func (c *Counter) Count() string {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.cleanup(time.Now())
-	return strconv.Itoa(len(c.timestamps))
+func (counter *Counter) Count() string {
+	counter.mutex.Lock()
+	defer counter.mutex.Unlock()
+	counter.cleanup(time.Now())
+	return strconv.Itoa(len(counter.timestamps))
 }
 
-func (c *Counter) cleanup(now time.Time) {
-	threshold := now.Add(-c.interval)
+func (counter *Counter) cleanup(now time.Time) {
+	threshold := now.Add(-counter.interval)
 	var i int
-	for i = 0; i < len(c.timestamps); i++ {
-		if c.timestamps[i].After(threshold) {
+	for i = 0; i < len(counter.timestamps); i++ {
+		if counter.timestamps[i].After(threshold) {
 			break
 		}
 	}
-	c.timestamps = c.timestamps[i:]
+	counter.timestamps = counter.timestamps[i:]
 }
 
-func (c *Counter) Save() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.store.Save(c.timestamps)
+func (counter *Counter) Save() {
+	counter.mutex.Lock()
+	defer counter.mutex.Unlock()
+	counter.store.Save(counter.timestamps)
 }
 
-func (c *Counter) Load() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.timestamps = c.store.Load()
+func (counter *Counter) Load() {
+	counter.mutex.Lock()
+	defer counter.mutex.Unlock()
+	counter.timestamps = counter.store.Load()
 }

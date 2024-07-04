@@ -16,34 +16,34 @@ type Storage interface {
 
 type FileStorage struct {
 	filename string
-	mu       sync.Mutex
+	mutex    sync.Mutex
 }
 
 func NewFileStorage(filename string) *FileStorage {
 	return &FileStorage{filename: filename}
 }
 
-func (f *FileStorage) Save(data []time.Time) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+func (fileStorage *FileStorage) Save(data []time.Time) {
+	fileStorage.mutex.Lock()
+	defer fileStorage.mutex.Unlock()
 	file, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
 		log.Fatalf("Could not marshal data: %s\n", err)
 	}
-	err = ioutil.WriteFile(f.filename, file, 0644)
+	err = ioutil.WriteFile(fileStorage.filename, file, 0644)
 	if err != nil {
 		log.Fatalf("Could not write file: %s\n", err)
 	}
 }
 
-func (f *FileStorage) Load() []time.Time {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+func (fileStorage *FileStorage) Load() []time.Time {
+	fileStorage.mutex.Lock()
+	defer fileStorage.mutex.Unlock()
 	var data []time.Time
-	file, err := os.Open(f.filename)
+	file, err := os.Open(fileStorage.filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			f.Save([]time.Time{})
+			fileStorage.Save([]time.Time{})
 			return data
 		} else {
 			log.Fatalf("Could not open file: %s\n", err)
