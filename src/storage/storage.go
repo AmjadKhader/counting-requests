@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type Storage interface {
 
 type FileStorage struct {
 	filename string
+	mu       sync.Mutex
 }
 
 func NewFileStorage(filename string) *FileStorage {
@@ -22,6 +24,8 @@ func NewFileStorage(filename string) *FileStorage {
 }
 
 func (f *FileStorage) Save(data []time.Time) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	file, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
 		log.Fatalf("Could not marshal data: %s\n", err)
@@ -33,11 +37,12 @@ func (f *FileStorage) Save(data []time.Time) {
 }
 
 func (f *FileStorage) Load() []time.Time {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	var data []time.Time
 	file, err := os.Open(f.filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// If the file does not exist, create it with an initial empty array
 			f.Save([]time.Time{})
 			return data
 		} else {
